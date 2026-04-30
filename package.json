@@ -1,6 +1,9 @@
 {
   "name": "supersecretproject",
   "version": "1.0.0",
+  "engines":{
+    "node": "20.20.2"
+  },
   "main": "./api/index.js",
   "scripts": {
     "dev": "nodemon ./api/index.js",
