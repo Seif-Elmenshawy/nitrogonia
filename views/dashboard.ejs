@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CO₂ Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <div id="loader" class="loader"></div>
+  <main>
+    <section class="current-co2 track-card">
+      <div class="co2-display">
+        <h2>Nitrogonia</h2>
+      </div>
+    </section>
+    <section style="display: none;">
+      <div id="chartContainer" style="width:100%; height:280px">
+        <canvas id="chart"></canvas>
+      </div>
+    </section>
+<div id="tempChartContainer" class="track-card co2-graph"></div>
+<div id="levelChartContainer" class="track-card co2-graph"></div>
+<div id="moistureChartContainer" class="track-card co2-graph"></div>
+    
+        <h1>Toggle Fan</h1>
+        <button id="fan-btn" class="filter-button"></button>
+
+        <h1>Toggle Solenoid</h1>
+        <button id="solenoid-btn" class="filter-button" ></button>
+
+  </main>
+  <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+  <script src="https://cdn.canvasjs.com/canvasjs.stock.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let stockChart;
+    let waterchart;
+    let soilmMoistureChart;
+    let fanState;
+    let solenoidState
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById('loader').style.display = "none";
+
+      const canvasElement = document.getElementById('chart');
+      const levelChart = document.getElementById("levelChart")
+      const moistureChart = document.getElementById("moistureChart")
+
+      let fullTempData = JSON.parse('<%- JSON.stringify(tempData) %>')
+      let fullLevelData = JSON.parse('<%- JSON.stringify(levelData) %>')
+      let fullMoistureData = JSON.parse('<%- JSON.stringify(moistureData) %>')
+      
+      let currentTempData = [];
+      let currentLevelData = [];
+      let currentMoistureData = [];
+
+      if (canvasElement && canvasElement instanceof HTMLCanvasElement) {
+        const ctx = canvasElement.getContext('2d');
+
+        if (ctx) {
+          let tempData = JSON.parse('<%- JSON.stringify(tempData) %>').reverse();
+          let levelData = JSON.parse('<%- JSON.stringify(levelData) %>').reverse();
+          let moistureData = JSON.parse('<%- JSON.stringify(moistureData) %>').reverse();
+
+          // 🔹 Temperature Chart
+          stockChart = new CanvasJS.StockChart("tempChartContainer", {
+            title: {
+              text: "Temperature Over Time",
+              fontColor: "#49c34c"
+            },
+            animationEnabled: true,
+            exportEnabled: true,
+            backgroundColor: "#f0f0f0",
+            charts: [{
+              axisX: {
+                title: "Time (seconds ago)",
+                titleFontColor: "#000",
+                labelFontColor: "#49c34c",
+                crosshair: {
+                  enabled: true,
+                  snapToDataPoint: true,
+                  color: "#49c34c"
+                },
+                lineColor: "#000",
+                tickColor: "#000"
+              },
+              axisY: {
+                title: "Water Temperature (C)",
+                titleFontColor: "#000",
+                labelFontColor: "#49c34c",
+                crosshair: {
+                  enabled: true,
+                  color: "#49c34c"
+                },
+                gridColor: "#e0e0e0",
+                lineColor: "#000",
+                tickColor: "#000"
+              },
+              data: [{
+                type: "spline",
+                dataPoints: currentTempData,
+                color: "#49c34c",
+                markerColor: "#000",
+                lineThickness: 2
+              }]
+            }],
+            rangeSelector: {
+              inputFields: {
+                startValue: currentTempData[0]?.x,
+                endValue: currentTempData[currentTempData.length - 1]?.x,
+                valueFormatString: "###0"
+              },
+              buttons: [
+                { label: "10s", range: 10, rangeType: "number" },
+                { label: "30s", range: 30, rangeType: "number" },
+                { label: "1m", range: 60, rangeType: "number" },
+                { label: "All", rangeType: "all" }
+              ]
+            }
+          });
+
+          waterChart = new CanvasJS.StockChart("levelChartContainer", {
+              title: {
+                text: "Water Level Over Time",
+                fontColor: "#49c34c"
+              },
+              animationEnabled: true,
+              exportEnabled: true,
+              backgroundColor: "#f0f0f0",
+              charts: [{
+                axisX: {
+                  title: "Time (seconds ago)",
+                  titleFontColor: "#000",
+                  labelFontColor: "#49c34c",
+                  crosshair: {
+                    enabled: true,
+                    snapToDataPoint: true,
+                    color: "#49c34c"
+                  },
+                  lineColor: "#000",
+                  tickColor: "#000"
+                },
+                axisY: {
+                  title: "Water Level",
+                  titleFontColor: "#000",
+                  labelFontColor: "#49c34c",
+                  crosshair: {
+                    enabled: true,
+                    color: "#49c34c"
+                  },
+                  gridColor: "#e0e0e0",
+                  lineColor: "#000",
+                  tickColor: "#000"
+                },
+                data: [{
+                  type: "spline",
+                  dataPoints: currentLevelData,
+                  color: "#49c34c",
+                  markerColor: "#000",
+                  lineThickness: 2
+                }]
+              }],
+              rangeSelector: {
+                inputFields: {
+                  startValue: currentLevelData[0]?.x,
+                  endValue: currentLevelData[currentLevelData.length - 1]?.x,
+                  valueFormatString: "###0"
+                },
+                buttons: [
+                  { label: "10s", range: 10, rangeType: "number" },
+                  { label: "30s", range: 30, rangeType: "number" },
+                  { label: "1m", range: 60, rangeType: "number" },
+                  { label: "All", rangeType: "all" }
+                ]
+              }
+            });
+
+          // 🔹 Soil Moisture Chart
+          soilMoistureChart = new CanvasJS.StockChart("moistureChartContainer", {
+            title: {
+              text: "Soil Moisture Over Time",
+              fontColor: "#49c34c"
+            },
+            animationEnabled: true,
+            exportEnabled: true,
+            backgroundColor: "#f0f0f0",
+            charts: [{
+              axisX: {
+                title: "Time (seconds ago)",
+                titleFontColor: "#000",
+                labelFontColor: "#49c34c",
+                crosshair: {
+                  enabled: true,
+                  snapToDataPoint: true,
+                  color: "#49c34c"
+                },
+                lineColor: "#000",
+                tickColor: "#000"
+              },
+              axisY: {
+                title: "Soil Moisture",
+                titleFontColor: "#000",
+                labelFontColor: "#49c34c",
+                crosshair: {
+                  enabled: true,
+                  color: "#49c34c"
+                },
+                gridColor: "#e0e0e0",
+                lineColor: "#000",
+                tickColor: "#000"
+              },
+              data: [{
+                type: "spline",
+                dataPoints: currentMoistureData,
+                color: "#49c34c",
+                markerColor: "#000",
+                lineThickness: 2
+              }]
+            }],
+            rangeSelector: {
+              inputFields: {
+                startValue: currentMoistureData[0]?.x,
+                endValue: currentMoistureData[currentMoistureData.length - 1]?.x,
+                valueFormatString: "###0"
+              },
+              buttons: [
+                { label: "10s", range: 10, rangeType: "number" },
+                { label: "30s", range: 30, rangeType: "number" },
+                { label: "1m", range: 60, rangeType: "number" },
+                { label: "All", rangeType: "all" }
+              ]
+            }
+          });
+          // render all
+          stockChart.render();
+          waterChart.render();
+          soilMoistureChart.render();
+        
+      let dataIndex = 0; // Keep track of which point we are on
+
+      function streamData() {
+        // Check if we still have data left to plot
+        if (dataIndex < fullTempData.length) {
+          
+          // Push the next data point into the active chart arrays
+          currentTempData.push(fullTempData[dataIndex]);
+          currentLevelData.push(fullLevelData[dataIndex]);
+          currentMoistureData.push(fullMoistureData[dataIndex]);
+
+          // Update the charts to show the new point
+          stockChart.render();
+          waterChart.render();
+          soilMoistureChart.render();
+
+          // Move to the next point
+          dataIndex++;
+        } else {
+          // If all data is plotted, stop the interval
+          clearInterval(livePlotInterval);
+          console.log("Finished plotting all data over 30 minutes!");
+        }
+      }
+
+      // 416ms * 4320 points ≈ 1,800,000ms (30 minutes)
+      let livePlotInterval = setInterval(streamData, 416);
+
+        }
+
+      } else {
+        console.error("Failed to get canvas context. Ensure the canvas element exists.");
+      }
+        let fan_btn_text = "Off"
+        let solenoid_btn_text = "Off";
+        const toggle_btn = document.getElementById("fan-btn")
+        const solenoid_btn = document.getElementById("solenoid-btn")
+
+        toggle_btn.addEventListener("click", async (e)=>{
+            e.preventDefault()
+
+            
+            if (fanState == false){
+                fanState = true
+                document.getElementById("fan-btn").innerText = 'On'
+                console.log(fanState)
+            }else if (fanState == true){
+                fanState = false
+                document.getElementById("fan-btn").innerText = 'Off'
+                console.log(fanState)
+            }
+            const response = await fetch("/toggle-fans", {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'                
+                },
+                body: JSON.stringify({
+                    state: fanState
+                })
+            })
+        })
+        solenoid_btn.addEventListener("click", async (e)=>{
+            e.preventDefault()
+            if (solenoidState == false){
+                solenoidState = true
+                solenoid_btn.innerText = "On"
+            }else if (solenoidState == true){
+                solenoidState = false
+                solenoid_btn.innerText = "Off"
+            }
+            const response = await fetch("/toggle-solenoid", {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json'                
+                },
+                body: JSON.stringify({
+                    state: solenoidState
+                })
+            })
+        })
+
+      // Handle filter toggle button click
+      // const filterToggleButton = document.getElementById('filter-toggle-button');
+      // if (filterToggleButton) {
+      //   filterToggleButton.addEventListener('click', async function() {
+      //     const docId = filterToggleButton.getAttribute('data-doc-id');
+      //     const filterOn = filterToggleButton.getAttribute('data-filter-on') === 'true';
+      //     const newFilterStatus = !filterOn;
+
+      //     try {
+      //       const response = await fetch('/toggle-filter', {
+      //         method: 'POST',
+      //         headers: {
+      //           'Content-Type': 'application/json'
+      //         },
+      //         body: JSON.stringify({
+      //           docId: docId,
+      //           filterOn: newFilterStatus
+      //         })
+      //       });
+      //       const result = await response.json();
+      //       if (result.success) {
+      //         filterToggleButton.setAttribute('data-filter-on', newFilterStatus);
+      //         filterToggleButton.classList.toggle('on');
+      //         filterToggleButton.classList.toggle('off');
+      //         const icon = filterToggleButton.querySelector('i');
+      //         if (icon) {
+      //           icon.classList.toggle('fas');
+      //           icon.classList.toggle('fa-toggle-on');
+      //           icon.classList.toggle('fa-toggle-off');
+      //         }
+      //         filterToggleButton.textContent = newFilterStatus % 2 ? 'Off' : 'On';
+      //       }
+      //     } catch (error) {
+      //       console.error('Error updating filter status:', error);
+      //     }
+      //   });
+      // }
+    });
+    // Add this after DOMContentLoaded
+  async function fetchInitialStates() {
+      try {
+          const fanResponse = await fetch('/api/fan-state');
+          const fanData = await fanResponse.json();
+          fanState = fanData.fanState;
+          document.getElementById("fan-btn").innerText = fanState ? 'On' : 'Off';
+          
+          const solenoidResponse = await fetch('/api/solenoid-state');
+          const solenoidData = await solenoidResponse.json();
+          solenoidState = solenoidData.solenoidState;
+          document.getElementById("solenoid-btn").innerText = solenoidState ? 'On' : 'Off';
+      } catch (error) {
+          console.error("Failed to fetch initial states:", error);
+      }
+  }
+
+  fetchInitialStates();
+  </script>
+</body>
+
+</html>

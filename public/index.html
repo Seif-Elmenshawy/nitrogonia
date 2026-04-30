@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CO₂ Dashboard Login</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="tracks-grid">
+    <div class="track-card">
+      <img src="./tesseract.png" width="50px" alt="">
+      <h1>Alkaline-Tesseract</h1>
+
+      <form id="login-form" action="/dashboard" method="GET">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="docId">Tesseract Id:</label>
+            <input type="text" id="docId" name="docId" required placeholder="Enter your tesseract id">
+            <div class="error-message"></div>
+          </div>
+        </div>
+        <button type="submit" class="nav-button submit-button">
+          See Dashboard
+        </button>
+      </form>
+
+      <div class="tracks-note">
+        <i class="fas fa-info-circle"></i>
+        <p>This project is still under construction, by high schoolers at STEM High School for Boys - 6th of October, and is not yet finalizied nor published to audience.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
