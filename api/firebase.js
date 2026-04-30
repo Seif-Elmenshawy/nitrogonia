@@ -1,8 +1,10 @@
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
+
+console.log("Checking Env:", process.env.FIREBASECONFIGS ? "Found it!" : "Still missing...");
 const admin = require('firebase-admin');
 
-// Initialize Firebase using environment variable
 const serviceAccountString = process.env.FIREBASECONFIGS;
+
 if (!serviceAccountString) {
     throw new Error('FIREBASECONFIGS environment variable is not set');
 }
@@ -10,17 +12,25 @@ if (!serviceAccountString) {
 let serviceAccount;
 try {
     serviceAccount = JSON.parse(serviceAccountString);
+    
+    // CRITICAL: Replace escaped newlines with actual newline characters
+    if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
 } catch (error) {
-    throw new Error('Error parsing FIREBASECONFIGS environment variable: ' + error.message);
+    throw new Error('Error parsing FIREBASECONFIGS: ' + error.message);
 }
 
 if (!serviceAccount.project_id) {
-    throw new Error('Service account object must contain a string "project_id" property.');
+    throw new Error('Service account object must contain a "project_id".');
 }
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
+// Check if already initialized to prevent errors during hot-reloads (nodemon)
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+    });
+}
 
 const db = admin.firestore();
-module.exports = { db, admin }
+module.exports = { db, admin };

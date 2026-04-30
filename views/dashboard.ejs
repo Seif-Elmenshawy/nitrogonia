@@ -52,14 +52,25 @@
 
 <div id="moistureChartContainer" class="track-card co2-graph"></div>
 
-<h1>Toggle Fan</h1>
 
-<button id="fan-btn" class="filter-button"></button>
+<section class="current-co2 track-card">
+  <div>
+    <h1>Temperature Actuator (Fans & Pump)</h1>
+    <button id="fan-btn" class="filter-button"></button>
+  </div>
+  <div>
+    <h1>Water Level Actuator (Solenoid)</h1>
+    <button id="solenoid-btn" class="filter-button" ></button>
+  </div>
+  <div>
+    <h1>Soil Moisture Actuator (Pump)</h1>
+    <button id="moisture-btn" class="filter-button" >Off</button>
+  </div>
+</section>
 
 
-<h1>Toggle Solenoid</h1>
 
-<button id="solenoid-btn" class="filter-button" ></button>
+
 
 
 </main>
@@ -82,6 +93,8 @@ let waterchart;
 let soilmMoistureChart;
 
 let fanState;
+
+let moistureState = false
 
 let solenoidState
 
@@ -594,6 +607,17 @@ state: solenoidState
 
 })
 
+})
+
+document.getElementById("moisture-btn").addEventListener('click', ()=>{
+  if (moistureState){
+    document.getElementById("moisture-btn").innerHTML = "Off"
+    moistureState = false
+  }
+  else{
+    document.getElementById("moisture-btn").innerHTML = "On"
+    moistureState = true
+  }
 })
 
 

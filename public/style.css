@@ -54,7 +54,7 @@ canvas {
 
 .filter-button {
     padding: 10px 20px;
-    border: none;
+    border: solid black 2;
     border-radius: 8px;
     background: var(--light-gray);
     color: var(--text-color);
